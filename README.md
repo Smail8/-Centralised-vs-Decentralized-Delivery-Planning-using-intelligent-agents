@@ -1,1 +1,1 @@
-# -Centralised-vs-Decentralized-Delivery-Planning-using-intelligent-agents
+# Centralised-vs-Decentralized-Delivery-Planning-using-intelligent-agents
