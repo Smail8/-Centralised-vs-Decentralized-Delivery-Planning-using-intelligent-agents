@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section name="Workbench">
+	<section name="org.eclipse.ui.texteditor.FindReplaceDialog">
+		<item value="false" key="isRegEx"/>
+		<item value="time" key="selection"/>
+		<item value="false" key="casesensitive"/>
+		<item value="false" key="incremental"/>
+		<item value="true" key="wrap"/>
+		<item value="false" key="wholeword"/>
+		<list key="findhistory">
+			<item value="time"/>
+			<item value="Action("/>
+			<item value="action2"/>
+			<item value="action1"/>
+			<item value="strategy"/>
+			<item value="12"/>
+			<item value="7"/>
+			<item value="11"/>
+			<item value="10"/>
+			<item value="1310"/>
+			<item value="9"/>
+			<item value="8"/>
+			<item value="6"/>
+			<item value="5"/>
+			<item value="4"/>
+		</list>
+		<list key="replacehistory">
+			<item value="actionD"/>
+			<item value="actionP"/>
+			<item value="neighbor"/>
+			<item value="14"/>
+			<item value="12"/>
+			<item value="7"/>
+			<item value="11"/>
+			<item value="139"/>
+			<item value="10"/>
+			<item value="9"/>
+			<item value="8"/>
+			<item value="6"/>
+			<item value="5"/>
+			<item value="4"/>
+			<item value="13"/>
+		</list>
+	</section>
+	<section name="org.eclipse.ui.texteditor.FindReplaceDialog_dialogBounds">
+		<item value="336" key="DIALOG_WIDTH"/>
+		<item value="1|Segoe UI|9.0|0|WINDOWS|1|-15|0|0|0|400|0|0|0|1|0|0|0|0|Segoe UI" key="DIALOG_FONT_NAME"/>
+		<item value="454" key="DIALOG_HEIGHT"/>
+		<item value="1860" key="DIALOG_X_ORIGIN"/>
+		<item value="250" key="DIALOG_Y_ORIGIN"/>
+	</section>
+</section>
