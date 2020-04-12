@@ -1,0 +1,74 @@
+03:43:43.003 FINE | Run command: java -Xmx1024m -classpath \Users\smail\Desktop\College\MA1\Intelligent_Agents\Auction_Agents\logist\logist.jar logist.LogistPlatform -o tournament\MyEvent\auction-NaiveAgent-NMyAgent.xml -a tournament\MyEvent\agents.xml config\auction.xml NaiveAgent NMyAgent
+03:43:43.171 CONFIG | Reading config\auction.xml
+03:43:43.255 CONFIG | Reading config\settings_auction.xml
+03:43:43.340 CONFIG | Reading config\topology\england.xml
+03:43:43.358 CONFIG | Reading tournament\MyEvent\agents.xml
+03:43:43.418 CONFIG | adversVehicle[0].homeCity = Liverpool
+03:43:43.419 CONFIG | adversVehicle[1].homeCity = Sheffield
+03:43:43.419 CONFIG | adversVehicle[0].homeCity = Liverpool
+03:43:43.419 CONFIG | adversVehicle[1].homeCity = Sheffield
+03:43:43.423 WARNING | logist.LogistException: agent NMyAgent crashed: java.lang.ArrayIndexOutOfBoundsException: 2
+03:43:43.428 WARNING | 	at logist.agent.TimeoutGuard.schedule(TimeoutGuard.java:34)
+03:43:43.429 WARNING | 	at logist.agent.AuctionAgent.askBid(AuctionAgent.java:90)
+03:43:43.430 WARNING | 	at logist.simulation.Manager.beginRound(Manager.java:132)
+03:43:43.431 WARNING | 	at logist.simulation.Manager.run(Manager.java:60)
+03:43:43.432 WARNING | 	at logist.LogistPlatform.main(LogistPlatform.java:126)
+03:43:43.434 WARNING | Caused by: java.util.concurrent.ExecutionException: java.lang.ArrayIndexOutOfBoundsException: 2
+03:43:43.435 WARNING | 	at java.util.concurrent.FutureTask.report(Unknown Source)
+03:43:43.435 WARNING | 	at java.util.concurrent.FutureTask.get(Unknown Source)
+03:43:43.436 WARNING | 	at logist.agent.TimeoutGuard.schedule(TimeoutGuard.java:29)
+03:43:43.437 WARNING | 	... 4 more
+03:43:43.437 WARNING | Caused by: java.lang.ArrayIndexOutOfBoundsException: 2
+03:43:43.438 WARNING | 	at MyAgent.Strategy.<init>(Strategy.java:92)
+03:43:43.439 WARNING | 	at MyAgent.AuctionTemplate.auctionResult(AuctionTemplate.java:161)
+03:43:43.440 WARNING | 	at logist.agent.AuctionAgent$2.call(AuctionAgent.java:98)
+03:43:43.441 WARNING | 	at logist.agent.AuctionAgent$2.call(AuctionAgent.java:1)
+03:43:43.442 WARNING | 	at java.util.concurrent.FutureTask.run(Unknown Source)
+03:43:43.443 WARNING | 	at java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source)
+03:43:43.443 WARNING | 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source)
+03:43:43.444 WARNING | 	at java.lang.Thread.run(Unknown Source)
+03:43:43.461 SEVERE | LogistPlatform returned error code -3
+03:43:43.462 FINE | Run command: java -Xmx1024m -classpath \Users\smail\Desktop\College\MA1\Intelligent_Agents\Auction_Agents\logist\logist.jar logist.LogistPlatform -o tournament\MyEvent\auction-NaiveAgent-NonPredictiveAgent.xml -a tournament\MyEvent\agents.xml config\auction.xml NaiveAgent NonPredictiveAgent
+03:43:43.609 CONFIG | Reading config\auction.xml
+03:43:43.699 CONFIG | Reading config\settings_auction.xml
+03:43:43.798 CONFIG | Reading config\topology\england.xml
+03:43:43.818 CONFIG | Reading tournament\MyEvent\agents.xml
+03:43:43.877 CONFIG | test1
+03:43:43.878 CONFIG | test2
+03:43:43.879 CONFIG | test1
+03:43:43.879 CONFIG | test2
+03:43:43.879 CONFIG | test1
+03:43:43.880 CONFIG | test2
+03:43:43.880 CONFIG | test1
+03:43:43.881 CONFIG | test2
+03:43:43.883 CONFIG | test1
+03:43:43.885 CONFIG | test2
+03:43:43.885 CONFIG | test1
+03:43:43.886 CONFIG | test2
+03:43:43.886 CONFIG | test1
+03:43:43.887 CONFIG | test2
+03:43:43.887 CONFIG | test1
+03:43:43.891 CONFIG | test2
+03:43:43.892 CONFIG | test1
+03:43:43.894 CONFIG | test2
+03:43:43.895 CONFIG | test1
+03:43:43.896 CONFIG | test2
+03:43:43.897 CONFIG | test1
+03:43:43.899 CONFIG | test2
+03:43:43.900 CONFIG | test1
+03:43:43.901 CONFIG | test2
+03:43:43.901 CONFIG | test1
+03:43:43.905 CONFIG | test2
+03:43:43.907 CONFIG | test1
+03:43:43.911 CONFIG | test2
+03:43:43.911 CONFIG | test1
+03:43:43.919 CONFIG | test2
+03:43:43.919 CONFIG | test1
+03:43:43.922 CONFIG | test2
+03:43:43.922 CONFIG | test1
+03:43:43.923 CONFIG | test2
+03:43:43.923 CONFIG | test1
+03:43:43.924 CONFIG | test2
+03:43:43.925 CONFIG | test1
+03:43:43.929 CONFIG | test2
+03:43:43.930 CONFIG | test1

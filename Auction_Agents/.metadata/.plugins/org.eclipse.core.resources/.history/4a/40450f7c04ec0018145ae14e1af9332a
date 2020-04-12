@@ -1,0 +1,387 @@
+package template;
+
+import java.util.List;
+import java.util.ArrayList;
+import logist.task.Task;
+import logist.topology.Topology.City;
+import logist.simulation.Vehicle;
+import logist.plan.Plan;
+
+public class Strategy {
+	private static final int PICKUP = 0;
+	private static final int DELIVER = 1;
+	
+	public Action[] nextAction;
+	public Action[] previousAction;
+	public int[] time;
+	public int[] vehicle;
+	public int[][] load;
+	public double strategyCost;
+	
+	public Strategy(int numTasks, int numVehicles) {
+		int numActions = 2*numTasks;
+		this.nextAction = new Action[numActions + numVehicles];
+		this.previousAction = new Action[numActions];
+		this.time = new int[numActions];
+		this.vehicle = new int[numTasks];
+		this.load = new int[numVehicles][numActions];
+		
+		for(int i = 0; i < numActions + numVehicles; i++)
+			this.nextAction[i] = null;
+		
+		for(int i = 0; i < numActions ; i++)
+			this.previousAction[i] = null;
+		
+		for(int i = 0; i < numVehicles; i++) {
+			for(int j= 0; j < numActions; j++)
+				this.load[i][j] = 0;
+		}
+	}
+	
+	public Strategy(Strategy strategy, int numTasks, int numVehicles) {
+		int numActions = 2*numTasks;
+		this.nextAction = new Action[numActions + numVehicles];
+		this.previousAction = new Action[numActions];
+		this.time = new int[numActions];
+		this.vehicle = new int[numTasks];
+		this.load = new int[numVehicles][numActions];
+
+		
+		for(int i = numActions; i < numActions + numVehicles; i++)
+			this.nextAction[i] = strategy.nextAction[i];
+		
+		for(int i = 0; i < numTasks-1; i++) {
+			this.nextAction[i] = strategy.nextAction[i];
+			this.nextAction[numTasks + i] = strategy.nextAction[numTasks + i];
+			this.previousAction[i] = strategy.previousAction[i];
+			this.previousAction[numTasks + i] = strategy.previousAction[numTasks + i];
+			this.time[i] = strategy.time[i];
+			this.time[numTasks + i] = strategy.time[numTasks + i];
+			this.vehicle[i] = strategy.vehicle[i];
+			for(int j = 0; j < numVehicles; j++) {
+				this.load[j][i] = strategy.load[j][i];
+				this.load[j][numTasks + i] = strategy.load[j][numTasks + i];
+			}
+		}
+	}
+	
+	/*public void updateStrategy(int numTasks, List<Task> tasks, int vehicleId) {
+		int numActions = 2*numTasks;
+		
+		if(nextAction[numActions + vehicleId] == null) {
+			nextAction[numActions + vehicleId] = new Action(numTasks - 1, PICKUP, numTasks);
+			time[numTasks - 1] = 0;
+		}
+ 		
+		else {
+			Action currentAction = new Action();
+			Action lastAction = new Action();
+			
+			currentAction = nextAction[numActions + vehicleId];
+			do {
+				lastAction = currentAction;
+				currentAction = nextAction[currentAction.indexer + currentAction.task];
+			}while(currentAction != null);
+			
+			nextAction[lastAction.indexer + lastAction.task] = new Action(numTasks - 1, PICKUP, numTasks);
+			time[numTasks - 1] = time[lastAction.indexer + lastAction.task];
+		}
+		
+		nextAction[numTasks - 1] = new Action(numTasks - 1, DELIVER, numTasks);
+		nextAction[numActions - 1] = null;
+		time[numActions - 1] = time[numTasks - 1] + 1;
+		vehicle[numTasks - 1] = vehicleId;
+		updateLoad(numTasks, tasks, vehicleId);
+	}*/
+	
+	
+	
+	public void updateStrategy(int numTasks, int numVehicles, List<Task> tasks, List<Vehicle> vehicles) {
+		int numActions = 2*numTasks;
+		Action[] nextAct = new Action[numActions + numVehicles];
+		Action[] bestNextAction = new Action[numActions + numVehicles];
+		Action[] bestPrevAction = new Action[numActions];
+		Action[] prevAct = new Action[numActions];
+		Action currentAction = new Action();
+		Action lastAction = new Action();
+		Action pickupAction = new Action();
+		Action deliveryAction = new Action();
+		Action beforePickupAction = new Action();
+		Action beforeDeliveryAction = new Action();
+		int bestVehicle = 0;
+		double minCost = 999999;
+		double cost = 0;
+		System.out.println("test0");
+		for(int v = 0; v < numVehicles; v++) {
+			System.out.println("test1");
+			nextAct = this.nextAction.clone();
+			prevAct = this.previousAction.clone();
+			if(nextAct[numActions + v] == null) {
+				nextAct[numActions + v] = new Action(numTasks - 1, PICKUP, numTasks);
+				prevAct[numTasks - 1] = null;
+			}
+	 		
+			else {
+				currentAction = nextAct[numActions + v];
+				System.out.println("test0");
+				do {
+					lastAction = currentAction;
+					currentAction = nextAct[currentAction.indexer + currentAction.task];
+				}while(currentAction != null);
+				System.out.println("test0");
+				nextAct[lastAction.indexer + lastAction.task] = new Action(numTasks - 1, PICKUP, numTasks);
+				prevAct[numTasks - 1] = lastAction;
+			}
+			nextAct[numTasks - 1] = new Action(numTasks - 1, DELIVER, numTasks);
+			nextAct[numActions - 1] = null;
+			prevAct[numActions - 1] = new Action(numTasks - 1, PICKUP, numTasks);
+			cost = computeCost(nextAct, numTasks, numVehicles, tasks, vehicles);
+			if(cost < minCost) {
+				minCost = cost;
+				bestNextAction = nextAct.clone();
+				bestPrevAction = prevAct.clone();
+				bestVehicle = v;
+			}
+			
+			pickupAction = nextAct[lastAction.indexer + lastAction.task];
+			deliveryAction = nextAct[lastAction.indexer + lastAction.task];
+			System.out.println("test0");
+			while(prevAct[pickupAction.indexer + pickupAction.task] != null) {
+				beforePickupAction = prevAct[pickupAction.indexer + pickupAction.task];
+				nextAct[beforePickupAction.indexer + beforePickupAction.task] = nextAct[pickupAction.indexer + pickupAction.task];
+				nextAct[pickupAction.indexer + pickupAction.task] = beforePickupAction;
+				if(prevAct[beforePickupAction.indexer + beforePickupAction.task] != null)
+					nextAct[(prevAct[beforePickupAction.indexer + beforePickupAction.task].indexer) + (prevAct[beforePickupAction.indexer 
+				                                                                                        + beforePickupAction.task].task)] = pickupAction;
+				else
+					nextAct[numActions + v] = pickupAction;
+				
+				prevAct[nextAct[pickupAction.indexer + pickupAction.task].indexer + nextAct[pickupAction.indexer 
+				                                                                            			+ pickupAction.task].task] = beforePickupAction;
+				prevAct[pickupAction.indexer + pickupAction.task] = prevAct[beforePickupAction.indexer + beforePickupAction.task];
+				prevAct[beforePickupAction.indexer + beforePickupAction.task] = pickupAction;
+				
+				cost = computeCost(nextAct, numTasks, numVehicles, tasks, vehicles);
+				if(cost < minCost) {
+					minCost = cost;
+					bestNextAction = nextAct.clone();
+					bestPrevAction = prevAct.clone();
+					bestVehicle = v;
+				}
+				
+				while(!prevAct[deliveryAction.indexer + deliveryAction.task].equals(pickupAction)) {
+					beforeDeliveryAction = prevAct[deliveryAction.indexer + deliveryAction.task];
+					nextAct[beforeDeliveryAction.indexer + beforeDeliveryAction.task] = nextAct[deliveryAction.indexer + deliveryAction.task];
+					nextAct[deliveryAction.indexer + deliveryAction.task] = beforeDeliveryAction;
+					nextAct[(prevAct[beforeDeliveryAction.indexer + beforeDeliveryAction.task].indexer) + (prevAct[beforeDeliveryAction.indexer 
+					                                                                                        + beforeDeliveryAction.task].task)] = deliveryAction;
+					prevAct[nextAct[deliveryAction.indexer + deliveryAction.task].indexer + nextAct[deliveryAction.indexer 
+					                                                                                		+ deliveryAction.task].task] = beforeDeliveryAction;
+					prevAct[deliveryAction.indexer + deliveryAction.task] = prevAct[beforeDeliveryAction.indexer + beforeDeliveryAction.task];
+					prevAct[beforeDeliveryAction.indexer + beforeDeliveryAction.task] = deliveryAction;
+					
+					cost = computeCost(nextAct, numTasks, numVehicles, tasks, vehicles);
+					if(cost < minCost) {
+						minCost = cost;
+						bestNextAction = nextAct.clone();
+						bestPrevAction = prevAct.clone();
+						bestVehicle = v;
+					}
+				}
+			}
+			System.out.println("test0");
+		}
+		nextAction = bestNextAction.clone();
+		previousAction = bestPrevAction.clone();
+		vehicle[numTasks - 1] = bestVehicle;
+		strategyCost = minCost;
+		updateTime(numTasks, numVehicles);
+		updateLoad(numTasks, numVehicles, tasks);
+	}
+	
+	//need to compute all combination each time
+	private double computeCost(Action[] nextAct, int numTasks, int numVehicles, List<Task> tasks, List<Vehicle> vehicles) {
+		double cost = 0;
+		int numActions = 2*numTasks;
+		Action action = new Action();
+		Action previousAction = new Action();
+		
+		for(int v = 0; v < numVehicles; v++) {
+			action = nextAct[numActions + v];
+			if(action != null)
+				cost += vehicles.get(v).homeCity().distanceTo(tasks.get(action.task).pickupCity)
+						* vehicles.get(v).costPerKm();
+			else
+				continue;
+			
+			previousAction = action;
+			action = nextAct[action.indexer + action.task];
+			while(action != null) {
+				if(previousAction.command == PICKUP && action.command == PICKUP ) {
+    				cost += tasks.get(previousAction.task).pickupCity.distanceTo(tasks.get(action.task).pickupCity) 
+    						* vehicles.get(v).costPerKm();
+    			}
+    			else if(previousAction.command == PICKUP && action.command == DELIVER ) {
+    				cost += tasks.get(previousAction.task).pickupCity.distanceTo(tasks.get(action.task).deliveryCity) 
+    						* vehicles.get(v).costPerKm();
+    			}
+    			else if(previousAction.command == DELIVER && action.command == PICKUP ) {
+    				cost += tasks.get(previousAction.task).deliveryCity.distanceTo(tasks.get(action.task).pickupCity) 
+    						* vehicles.get(v).costPerKm();
+    			}
+    			else if(previousAction.command == DELIVER && action.command == DELIVER ) {
+    				cost += tasks.get(previousAction.task).deliveryCity.distanceTo(tasks.get(action.task).deliveryCity) 
+    						* vehicles.get(v).costPerKm();
+    			}	
+				previousAction = action;
+				action = nextAct[action.indexer + action.task];
+			}
+		}
+		
+		return cost;
+	}
+	
+	private void updateLoad(int numTasks,int numVehicles, List<Task> tasks) {
+		Action action1 = new Action();
+    	Action action2 = new Action();
+    	int numActions = 2*numTasks;
+    	int time = 0;
+    	
+    	for(int vehicle = 0; vehicle < numVehicles; vehicle++) {
+	    	action1 = nextAction[numActions + vehicle];
+	    	
+	    	if(action1 != null) {
+	    		if(action1.command == PICKUP) 
+	    			load[vehicle][0] = tasks.get(action1.task).weight;
+	   
+	    		else if(action1.command == DELIVER) 
+	    			load[vehicle][0] = -1*tasks.get(action1.task).weight;
+	    		
+	    		action2 = nextAction[action1.indexer + action1.task];
+	    		
+	    		do {
+	    			action2 = nextAction[action1.indexer + action1.task];
+	    			time++;
+	
+	    			if(action2 != null) {
+	    				if(action2.command == PICKUP) 
+	    					load[vehicle][time] = load[vehicle][time-1] + tasks.get(action2.task).weight;
+	    				
+	    				else if(action2.command == DELIVER) 
+	    					load[vehicle][time] = load[vehicle][time-1] - tasks.get(action2.task).weight;
+	    				
+	    				action1 = action2;    				
+	    			}
+	    		}while(action2 != null);
+	    	}
+    	}
+	}
+	
+	private void updateTime(int numTasks, int numVehicles) {
+    	Action action1 = new Action();
+    	Action action2 = new Action();
+    	int numActions = 2*numTasks;
+    	
+    	for(int vehicle = 0; vehicle < numVehicles; vehicle++) {
+	    	action1 = nextAction[numActions + vehicle];
+	    	
+	    	if( action1 != null) {
+	    		time[action1.indexer + action1.task] = 0;
+	    		action2 = nextAction[action1.indexer + action1.task];
+	    		
+				do {
+	    			action2 = nextAction[action1.indexer + action1.task];
+	    			if(action2 != null ) {
+	    				time[action2.indexer + action2.task] = time[action1.indexer + action1.task] + 1;
+	    				action1 = action2;
+	    			}
+	    			
+	    		}while(action2 != null);
+	    	}
+    	}
+    }
+	
+	public List<Plan> strategyToPlans(int numVehicles,int numTasks, List<Vehicle> vehicles, List<Task> tasks){
+		List<Plan> plans = new ArrayList<Plan>();
+		Plan plan;
+		Action action1 = new Action();
+		Action action2 = new Action();
+		int numActions = 2*numTasks;
+		
+		for( int i = 0 ; i < numVehicles ; i++) {
+			plan = new Plan(vehicles.get(i).homeCity());
+			action1 = nextAction[numActions + i];
+			
+			if(action1 != null) {
+				
+				for(City city : vehicles.get(i).homeCity().pathTo(tasks.get(action1.task).pickupCity))
+					plan.appendMove(city);
+				
+				plan.appendPickup(tasks.get(action1.task));
+				
+				action2 = nextAction[action1.indexer + action1.task];
+				
+				do {
+					action2 = nextAction[action1.indexer + action1.task];
+					if(action2 != null) {
+						if(action1.command == PICKUP && action2.command == PICKUP) {
+							for(City city : tasks.get(action1.task).pickupCity.pathTo(tasks.get(action2.task).pickupCity))
+								plan.appendMove(city);
+						
+							plan.appendPickup(tasks.get(action2.task));
+						}
+					
+						else if(action1.command == PICKUP && action2.command == DELIVER) {
+							for(City city : tasks.get(action1.task).pickupCity.pathTo(tasks.get(action2.task).deliveryCity))
+								plan.appendMove(city);
+						
+							plan.appendDelivery(tasks.get(action2.task));
+						}
+					
+						else if(action1.command == DELIVER && action2.command == PICKUP) {
+							for(City city : tasks.get(action1.task).deliveryCity.pathTo(tasks.get(action2.task).pickupCity))
+								plan.appendMove(city);
+						
+							plan.appendPickup(tasks.get(action2.task));
+						}
+					
+						else if(action1.command == DELIVER && action2.command == DELIVER) {
+							for(City city : tasks.get(action1.task).deliveryCity.pathTo(tasks.get(action2.task).deliveryCity))
+								plan.appendMove(city);
+						
+							plan.appendDelivery(tasks.get(action2.task));
+						}
+					
+						action1 = action2;
+					}
+				}while(action2 != null);
+			}
+			
+			plans.add(plan);		
+		}
+		
+		return plans;
+	}
+	//still not calculating marginal cost, need to find the strategy with the minimum cost between all vehicles
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+}

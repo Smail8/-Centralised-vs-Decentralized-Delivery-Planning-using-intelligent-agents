@@ -1,0 +1,157 @@
+package template;
+
+//the list of imports
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
+import logist.Measures;
+import logist.behavior.AuctionBehavior;
+import logist.agent.Agent;
+import logist.simulation.Vehicle;
+import logist.plan.Plan;
+import logist.task.Task;
+import logist.task.TaskDistribution;
+import logist.task.TaskSet;
+import logist.topology.Topology;
+import logist.topology.Topology.City;
+
+/**
+ * A very simple auction agent that assigns all tasks to its first vehicle and
+ * handles them sequentially.
+ * 
+ */
+@SuppressWarnings("unused")
+public class AuctionTemplate implements AuctionBehavior {
+
+	private Topology topology;
+	private TaskDistribution distribution;
+	private Agent agent;
+	private Random random;
+	private int numVehicles;
+	private int numTasks;
+	private int round;
+	private boolean flag = true;
+	private Strategy finalStrategy;
+	private Strategy tempStrategy;
+	private Strategy oldStrategy;
+	private List<Task> wonTasks;
+	private List<Task> tempTasks; 
+	private List<Vehicle> vehicles;
+	
+
+	//private City currentCity;
+	
+
+	@Override
+	public void setup(Topology topology, TaskDistribution distribution,
+			Agent agent) {
+
+		this.topology = topology;
+		this.distribution = distribution;
+		this.agent = agent;
+		this.numTasks = 0;
+		this.numVehicles = agent.vehicles().size();
+		this.vehicles = new ArrayList<Vehicle>();
+		this.vehicles.addAll(agent.vehicles());
+		this.wonTasks = new ArrayList<Task>();
+		this.tempTasks = new ArrayList<Task>();
+		this.round = 0;
+		System.out.println("Setup done");
+		//this.currentCity = vehicle.homeCity();
+
+		//long seed = -9019554669489983951L * currentCity.hashCode() * agent.id();
+		//this.random = new Random(seed);
+	}
+
+	@Override
+	public void auctionResult(Task previous, int winner, Long[] bids) {
+		if (winner == agent.id()) {
+		//currentCity = previous.deliveryCity;
+			numTasks++;
+			wonTasks.clear();
+			wonTasks.addAll(tempTasks);
+			oldStrategy = new Strategy(finalStrategy, numTasks-1, numVehicles);
+			finalStrategy = new Strategy(tempStrategy, numTasks, numVehicles);
+			
+		}
+	}
+	
+	@Override
+	public Long askPrice(Task task) {
+		double marginalCost = 0;
+		double ratio = 1.1;
+		double bid = 0;
+		System.out.println("askPrice start");
+		round++;
+		tempTasks.clear();
+		tempTasks.addAll(wonTasks);
+		tempTasks.add(task);
+		tempStrategy = new Strategy(numTasks + 1, numVehicles);
+		tempStrategy.updateStrategy(numTasks + 1, numVehicles, tempTasks, vehicles);
+		
+		if(round == 1) {
+			marginalCost = tempStrategy.strategyCost;
+		}
+		else {
+			marginalCost = tempStrategy.strategyCost - oldStrategy.strategyCost;
+		}
+		
+		bid = ratio*marginalCost;
+		/*if (vehicle.capacity() < task.weight)
+			return null;
+
+		long distanceTask = task.pickupCity.distanceUnitsTo(task.deliveryCity);
+		long distanceSum = distanceTask
+				+ currentCity.distanceUnitsTo(task.pickupCity);
+		double marginalCost = Measures.unitsToKM(distanceSum
+				* vehicle.costPerKm());
+
+		double ratio = 1.0 + (random.nextDouble() * 0.05 * task.id);
+		double bid = ratio * marginalCost;*/
+		
+		System.out.println("askPrice done");
+
+		return (long) Math.round(bid);
+	}
+	
+	
+
+	@Override
+	public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
+		
+//		System.out.println("Agent " + agent.id() + " has tasks " + tasks);
+
+		//Plan planVehicle1 = naivePlan(vehicle, tasks);
+
+		List<Plan> plans = new ArrayList<Plan>();
+	//	plans.add(planVehicle1);
+	//	while (plans.size() < vehicles.size())
+		//	plans.add(Plan.EMPTY);
+		plans = finalStrategy.strategyToPlans(numVehicles, numTasks, vehicles, wonTasks);
+		return plans;
+	}
+
+	private Plan naivePlan(Vehicle vehicle, TaskSet tasks) {
+		City current = vehicle.getCurrentCity();
+		Plan plan = new Plan(current);
+
+		for (Task task : tasks) {
+			// move: current city => pickup location
+			for (City city : current.pathTo(task.pickupCity))
+				plan.appendMove(city);
+
+			plan.appendPickup(task);
+
+			// move: pickup location => delivery location
+			for (City city : task.path())
+				plan.appendMove(city);
+
+			plan.appendDelivery(task);
+
+			// set current city
+			current = task.deliveryCity;
+		}
+		return plan;
+	}
+}
