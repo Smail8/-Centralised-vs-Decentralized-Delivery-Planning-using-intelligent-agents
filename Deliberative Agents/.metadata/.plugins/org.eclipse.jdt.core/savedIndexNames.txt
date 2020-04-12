@@ -1,0 +1,1 @@
+INDEX VERSION 1.131+C:\Users\smail\Desktop\College\MA1\Intelligent Agents\Deliberative Agents\.metadata\.plugins\org.eclipse.jdt.core
