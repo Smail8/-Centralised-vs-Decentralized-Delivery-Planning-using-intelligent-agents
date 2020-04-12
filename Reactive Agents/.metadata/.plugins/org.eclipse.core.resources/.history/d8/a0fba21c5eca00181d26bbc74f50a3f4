@@ -1,0 +1,156 @@
+package template;
+
+import java.util.Random;
+import java.util.List;
+
+import logist.simulation.Vehicle;
+import logist.agent.Agent;
+import logist.behavior.ReactiveBehavior;
+import logist.plan.Action;
+import logist.plan.Action.Move;
+import logist.plan.Action.Pickup;
+import logist.task.Task;
+import logist.task.TaskDistribution;
+import logist.topology.Topology;
+import logist.topology.Topology.City;
+
+
+public class ReactiveTemplate implements ReactiveBehavior {
+
+	private Random random;
+	private double pPickup;
+	private int numActions;
+	private Agent myAgent;
+	
+
+	@Override
+	public void setup(Topology topology, TaskDistribution td, Agent agent) {
+		
+		List<City> cities;
+		cities = topology.cities();
+		
+		//Declare and initialize reward table
+		int[][] R = new int[topology.size()][topology.size()];
+		
+		for(int i = 0; i < topology.size(); i++) {
+			for(int j = 0; j < topology.size(); j++) {
+				if(j != i) 
+					R[i][0] += (td.reward(cities.get(i), cities.get(j)) - cities.get(i).distanceUnitsTo(cities.get(j)));
+			}
+			
+			for(int k=0; k < cities.get(i).neighbors().size(); k++) {
+				if(k != i)
+					R[i][1] -= cities.get(i).distanceUnitsTo(cities.get(i).neighbors().get(k));
+			}
+			R[i][0] /= (topology.size()-1);
+			R[i][1] /= (cities.get(i).neighbors().size()-1);
+		}
+		
+		//Declare and initialize transition table
+		double[][][] T = new double[topology.size()][2][topology.size()];
+		
+		for(int i = 0; i < topology.size(); i++) {
+			for(int j = 0; j < topology.size(); j++) {
+				if(j != i) 
+					T[i][0][j] = td.probability(cities.get(i), cities.get(j));
+				else
+					T[i][0][j] = 0.;
+				
+				if(cities.get(i).hasNeighbor(cities.get(j)))
+					T[i][0][j] = 1 - td.probability(cities.get(j), null);
+				else
+					T[i][1][j] = 0.;
+			}	
+		}
+		
+		
+		//This is a test
+		// Reads the discount factor from the agents.xml file.
+		// If the property is not present it defaults to 0.95
+		
+		Double discount = agent.readProperty("discount-factor", Double.class,
+				0.95);
+
+		this.random = new Random();
+		this.pPickup = discount;
+		this.numActions = 2;
+		this.myAgent = agent;
+		 
+		//MDP Algorithm
+		double[] V = new double[topology.size()];
+		double[] temp = new double[topology.size()];
+		double[][] Q = new double[topology.size()][2];
+		int[] best = new int[topology.size()];
+		double difference = 0;
+		double tolerance = 0.01;
+		
+		
+		for(int s = 0; s < topology.size(); s++)
+			V[s] = 0.;
+		
+		do {
+			for(int s = 0; s < topology.size(); s++)
+				temp[s] = V[s];
+			
+			for(int s = 0; s < topology.size(); s++) {
+				for(int a = 0; a < 2; a++) {
+					Q[s][a] = (double) R[s][a];
+					for(int sp = 0; sp < topology.size(); sp++)
+						Q[s][a] += (discount*(T[s][a][sp])*V[sp]); 
+				}
+
+				if(Q[s][1] >= Q[s][0])
+					V[s] = Q[s][1];
+				else
+					V[s] = Q[s][0];
+			}
+			
+			difference = V[0] - temp[0];
+			for(int s = 0; s < topology.size(); s++) {
+				if(difference < V[s] - temp[s])
+					difference = V[s] - temp[s];
+			}
+			
+		}while(difference > tolerance);
+		
+		double action1;
+		double action2;
+		
+		for(int s = 0; s < topology.size(); s++) {
+			action1 = (double) R[s][0];
+			action2 = (double) R[s][1];
+			for(int sp = 0; sp < topology.size(); sp++) {
+				action1 += (discount * T[s][0][sp] * V[s]);
+				action2 += (discount * T[s][1][sp] * V[s]);
+			}
+			if(action1 > action2)
+				best[s] = 0;
+			else
+				best[s] = 1;
+		}
+		
+		System.out.println("The reward is "+td.reward(topology.parseCity("Rotterdam"), topology.parseCity("Rotterdam"))+"");
+		
+	}
+
+	//@Override
+	public Action act(Vehicle vehicle, Task availableTask) {
+		Action action;
+		
+		if (availableTask == null || random.nextDouble() > pPickup) {
+			City currentCity = vehicle.getCurrentCity();
+			action = new Move(currentCity.randomNeighbor(random));
+		} 
+		else {
+			action = new Pickup(availableTask);
+		}
+		
+		if (numActions >= 1) {
+			System.out.println("The total profit after "+numActions+" actions is "+myAgent.getTotalProfit()+" (average profit: "+(myAgent.getTotalProfit() / (double)numActions)+")");
+		}
+		numActions++;
+		
+		return action;
+	}
+	
+}

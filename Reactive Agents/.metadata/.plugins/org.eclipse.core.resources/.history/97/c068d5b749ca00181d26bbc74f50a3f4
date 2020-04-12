@@ -1,0 +1,116 @@
+package template;
+
+import java.util.Random;
+import java.util.List;
+
+import logist.simulation.Vehicle;
+import logist.agent.Agent;
+import logist.behavior.ReactiveBehavior;
+import logist.plan.Action;
+import logist.plan.Action.Move;
+import logist.plan.Action.Pickup;
+import logist.task.Task;
+import logist.task.TaskDistribution;
+import logist.topology.Topology;
+import logist.topology.Topology.City;
+
+
+public class ReactiveTemplate implements ReactiveBehavior {
+
+	private Random random;
+	private double pPickup;
+	private int numActions;
+	private Agent myAgent;
+	
+
+	@Override
+	public void setup(Topology topology, TaskDistribution td, Agent agent) {
+
+		List<City> cities;
+		cities = topology.cities();
+		
+		//Declare and initialize reward table
+		int[][] R = new int[topology.size()][2];
+		
+		for(int i = 0; i < topology.size(); i++) {
+			for(int j = 0; j < topology.size(); j++) {
+				if(j != i) 
+					R[i][0] += (td.reward(cities.get(i), cities.get(j)) - cities.get(i).distanceUnitsTo(cities.get(j)));
+			}
+			
+			for(int k=0; k < cities.get(i).neighbors().size(); k++) {
+				if(k != i)
+					R[i][1] -= cities.get(i).distanceUnitsTo(cities.get(i).neighbors().get(k));
+			}
+			R[i][0] /= (topology.size()-1);
+			R[i][1] /= (cities.get(i).neighbors().size()-1);
+		}
+		
+		//Declare and initialize transition table
+		Double[][][] T = new Double[topology.size()][2][topology.size()];
+		
+		for(int i = 0; i < topology.size(); i++) {
+			for(int j = 0; j < topology.size(); j++) {
+				if(j != i) 
+					T[0][i][j] = td.probability(cities.get(i), cities.get(j));
+				else
+					T[0][i][j] = 0.;
+				
+				if(cities.get(i).hasNeighbor(cities.get(j)))
+					T[1][i][j] = 1 - td.probability(cities.get(j), null);
+				else
+					T[1][i][j] = 0.;
+			}	
+		}
+		
+		
+		//This is a test
+		// Reads the discount factor from the agents.xml file.
+		// If the property is not present it defaults to 0.95
+		
+		Double discount = agent.readProperty("discount-factor", Double.class,
+				0.95);
+
+		this.random = new Random();
+		this.pPickup = discount;
+		this.numActions = 0;
+		this.myAgent = agent;
+		 
+		//MDP Algorithm
+		Double[] V = new Double[topology.size()];
+		Double[] temp = new Double[topology.size()];
+		Double[][] Q = new Double[topology.size()][2];
+		int[] best = new int[topology.size()];
+		
+		//do {
+			for(int s = 0; s < topology.size(); s++) {
+				for(int a = 0; a < 2; a++) {
+					Q[s][a] = R[a]
+				}
+			}
+			
+		//}while()
+		
+		
+	}
+
+	@Override
+	public Action act(Vehicle vehicle, Task availableTask) {
+		Action action;
+
+		if (availableTask == null || random.nextDouble() > pPickup) {
+			City currentCity = vehicle.getCurrentCity();
+			action = new Move(currentCity.randomNeighbor(random));
+		} else {
+			action = new Pickup(availableTask);
+		}
+		
+		if (numActions >= 1) {
+			System.out.println("The total profit after "+numActions+" actions is "+myAgent.getTotalProfit()+" (average profit: "+(myAgent.getTotalProfit() / (double)numActions)+")");
+		}
+		numActions++;
+		
+		return action;
+	}
+	
+}
